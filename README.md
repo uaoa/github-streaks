@@ -2,6 +2,8 @@
 
 A minimalist macOS menu bar app that displays your GitHub contribution streak.
 
+![GitHub Streaks App](screenshots/app-main.png)
+
 ## Features
 
 - **Streak Counter** — See your current streak at a glance
@@ -9,6 +11,8 @@ A minimalist macOS menu bar app that displays your GitHub contribution streak.
 - **Full Year View** — Click to see your complete contribution graph
 - **Customizable Display** — Show streak, grid, or both
 - **Native macOS Design** — Feels right at home on your Mac
+
+![Menu Bar Widget](screenshots/menubar-widget.png)
 
 ## Installation
 
@@ -18,6 +22,41 @@ A minimalist macOS menu bar app that displays your GitHub contribution streak.
 2. Download `GitHubStreaks.dmg` or `GitHubStreaks.zip`
 3. Open the DMG and drag the app to Applications, or unzip and move to Applications
 4. Launch the app and enter your GitHub username
+
+### Unverified App Warning
+
+Since the app is not signed with an Apple Developer certificate, macOS will show a warning when you first open it.
+
+**Option 1: Right-click to open**
+- Right-click (or Control-click) on the app and select "Open"
+- Click "Open" in the dialog
+
+**Option 2: Allow in System Settings**
+
+If you see "GitHubStreaks was blocked":
+
+1. Open **System Settings** > **Privacy & Security**
+2. Scroll down to find "GitHubStreaks was blocked to protect your Mac"
+3. Click **Open Anyway**
+
+![Gatekeeper Settings](screenshots/settings-options.jpeg)
+
+## Setup
+
+After launching, click on the menu bar icon and go to Settings:
+
+1. Enter your GitHub username
+2. Choose display mode (Grid, Days, or Hidden)
+3. Optionally enable "Show Streak" to display your current streak
+
+![Settings](screenshots/settings.png)
+
+## Usage
+
+- **Click** on the menu bar icon to see your full contribution graph
+- **Hover** over any day to see contribution details
+
+![Day Tooltip](screenshots/tooltip.png)
 
 ### Build from Source
 
