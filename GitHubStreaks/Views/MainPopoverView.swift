@@ -2,6 +2,7 @@ import SwiftUI
 
 struct GlassBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
+        #if compiler(>=6.1)
         if #available(macOS 26.0, *) {
             content
                 .glassEffect(.regular, in: .rect(cornerRadius: 16))
@@ -10,6 +11,11 @@ struct GlassBackgroundModifier: ViewModifier {
                 .background(.regularMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
+        #else
+        content
+            .background(.regularMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        #endif
     }
 }
 
