@@ -122,12 +122,14 @@ class ContributionsViewModel: ObservableObject {
             return
         }
 
+        print("🔄 Starting contribution fetch for \(username), forceRefresh: \(forceRefresh)")
         isLoading = true
         error = nil
 
         // Check cache first
         if !forceRefresh {
             if let cached = await CacheManager.shared.getCachedContributions(for: username) {
+                print("📦 Using cached data for \(username)")
                 contributions = cached
                 isLoading = false
                 return
@@ -135,20 +137,28 @@ class ContributionsViewModel: ObservableObject {
         }
 
         do {
+            print("🌐 Fetching fresh data from GitHub for \(username)")
             let data = try await GitHubService.shared.fetchContributions(for: username)
             await CacheManager.shared.cacheContributions(data)
             contributions = data
+            print("✅ Successfully fetched \(data.totalContributions) contributions, current streak: \(data.currentStreak)")
         } catch let fetchError as GitHubServiceError {
+            print("❌ GitHub service error: \(fetchError.errorDescription ?? "Unknown error")")
             error = fetchError.errorDescription
             // Keep showing cached data on error
             if contributions == nil {
                 contributions = await CacheManager.shared.getCachedContributions(for: username)
+                if contributions != nil {
+                    print("📦 Falling back to cached data after error")
+                }
             }
         } catch {
+            print("❌ Unexpected error: \(error.localizedDescription)")
             self.error = error.localizedDescription
         }
 
         isLoading = false
+        print("🏁 Contribution fetch completed for \(username)")
     }
 
     func refresh() {

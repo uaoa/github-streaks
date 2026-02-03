@@ -123,26 +123,33 @@ struct ContributionsData: Codable {
         let sortedDays = days.sorted { $0.date > $1.date }
         var streak = 0
         let calendar = Calendar.current
-        var expectedDate = calendar.startOfDay(for: Date())
+        
+        // Use user's local calendar for today's date calculation
+        // but compare using calendar date components rather than exact dates
+        let now = Date()
+        let todayComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        guard let today = calendar.date(from: todayComponents) else { return 0 }
+        
+        var expectedDate = today
 
         // Check if today has no contributions - start from yesterday
-        if let today = sortedDays.first,
-           calendar.isDate(today.date, inSameDayAs: expectedDate),
-           today.count == 0 {
-            expectedDate = calendar.date(byAdding: .day, value: -1, to: expectedDate)!
+        if let todayContribution = sortedDays.first(where: { calendar.isDate($0.date, inSameDayAs: today) }),
+           todayContribution.count == 0 {
+            expectedDate = calendar.date(byAdding: .day, value: -1, to: expectedDate) ?? expectedDate
         }
 
         for day in sortedDays {
-            let dayStart = calendar.startOfDay(for: day.date)
-
-            if calendar.isDate(dayStart, inSameDayAs: expectedDate) {
+            let dayComponents = calendar.dateComponents([.year, .month, .day], from: day.date)
+            guard let dayDate = calendar.date(from: dayComponents) else { continue }
+            
+            if calendar.isDate(dayDate, inSameDayAs: expectedDate) {
                 if day.count > 0 {
                     streak += 1
-                    expectedDate = calendar.date(byAdding: .day, value: -1, to: expectedDate)!
+                    expectedDate = calendar.date(byAdding: .day, value: -1, to: expectedDate) ?? expectedDate
                 } else {
                     break
                 }
-            } else if dayStart < expectedDate {
+            } else if dayDate < expectedDate {
                 break
             }
         }
@@ -155,13 +162,19 @@ struct ContributionsData: Codable {
         let sortedDays = days.sorted { $0.date < $1.date }
         var longest = 0
         var current = 0
+        let calendar = Calendar.current
         var previousDate: Date?
 
         for day in sortedDays {
             if day.count > 0 {
                 if let prev = previousDate {
-                    let calendar = Calendar.current
-                    let daysDiff = calendar.dateComponents([.day], from: prev, to: day.date).day ?? 0
+                    let prevComponents = calendar.dateComponents([.year, .month, .day], from: prev)
+                    let dayComponents = calendar.dateComponents([.year, .month, .day], from: day.date)
+                    
+                    guard let prevDate = calendar.date(from: prevComponents),
+                          let currentDate = calendar.date(from: dayComponents) else { continue }
+                    
+                    let daysDiff = calendar.dateComponents([.day], from: prevDate, to: currentDate).day ?? 0
                     if daysDiff == 1 {
                         current += 1
                     } else {

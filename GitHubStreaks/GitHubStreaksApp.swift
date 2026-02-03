@@ -143,7 +143,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let streak = contributionsViewModel.currentStreak
         let hasStreak = streak > 0
 
-        let iconName = hasStreak ? "flame.fill" : "square"
+        let iconName = "flame.fill"
         let iconColor = hasStreak ? NSColor.orange : NSColor.secondaryLabelColor
 
         guard let symbolImage = NSImage(systemSymbolName: iconName, accessibilityDescription: "Streak")?
@@ -370,6 +370,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if let launchItem = contextMenu.item(withTitle: "Launch at Login") {
                 launchItem.state = LaunchAtLoginManager.shared.isEnabled ? .on : .off
             }
+            
+            // Update refresh item state
+            if let refreshItem = contextMenu.item(withTitle: "Refresh") {
+                refreshItem.title = contributionsViewModel.isLoading ? "Refreshing..." : "Refresh"
+                refreshItem.isEnabled = !contributionsViewModel.isLoading
+            }
+            
             statusItem.menu = contextMenu
             statusItem.button?.performClick(nil)
             statusItem.menu = nil
@@ -387,7 +394,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func refreshData() {
-        contributionsViewModel.refresh()
+        if !contributionsViewModel.isLoading {
+            contributionsViewModel.refresh()
+        }
     }
 
     @objc private func openSettings() {

@@ -82,9 +82,16 @@ struct MainPopoverView: View {
             Spacer()
 
             Menu {
-                Button("Refresh", systemImage: "arrow.clockwise") {
-                    viewModel.refresh()
+                Button(viewModel.isLoading ? "Refreshing..." : "Refresh") {
+                    if !viewModel.isLoading {
+                        viewModel.refresh()
+                    }
+                } icon: {
+                    Image(systemName: "arrow.clockwise")
+                        .rotationEffect(.degrees(viewModel.isLoading ? 360 : 0))
+                        .animation(viewModel.isLoading ? .linear(duration: 1.0).repeatForever(autoreverses: false) : .default, value: viewModel.isLoading)
                 }
+                .disabled(viewModel.isLoading)
 
                 Button("Settings", systemImage: "gear") {
                     viewModel.showSettings = true
