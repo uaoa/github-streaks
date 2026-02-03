@@ -2,6 +2,11 @@
 
 A minimalist macOS menu bar app that displays your GitHub contribution streak.
 
+[![Download](https://img.shields.io/github/v/release/uaoa/github-streaks?style=for-the-badge&logo=apple&label=Download)](https://github.com/uaoa/github-streaks/releases/latest/download/GitHubStreaks.dmg)
+[![macOS](https://img.shields.io/badge/macOS-14.0+-black?style=for-the-badge&logo=apple)](https://github.com/uaoa/github-streaks)
+[![Swift](https://img.shields.io/badge/Swift-5.9-orange?style=for-the-badge&logo=swift)](https://github.com/uaoa/github-streaks)
+[![License](https://img.shields.io/github/license/uaoa/github-streaks?style=for-the-badge)](LICENSE)
+
 ![GitHub Streaks App](screenshots/app-main.png)
 
 ## Features
