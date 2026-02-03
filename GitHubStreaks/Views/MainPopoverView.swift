@@ -1,37 +1,46 @@
 import SwiftUI
 
 struct GlassBackgroundModifier: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+
     func body(content: Content) -> some View {
-        #if compiler(>=6.1)
-        if #available(macOS 26.0, *) {
-            content
-                .glassEffect(.regular, in: .rect(cornerRadius: 16))
-        } else {
-            content
-                .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-        #else
         content
-            .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        #endif
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(colorScheme == .dark
+                        ? Color(nsColor: .windowBackgroundColor).opacity(0.95)
+                        : Color(nsColor: .windowBackgroundColor))
+                    .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 4)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(
+                        colorScheme == .dark
+                            ? .white.opacity(0.1)
+                            : .black.opacity(0.05),
+                        lineWidth: 0.5
+                    )
+            )
     }
 }
 
 struct MainPopoverView: View {
     @ObservedObject var viewModel: ContributionsViewModel
+    @State private var animateStreak = false
 
     var body: some View {
         VStack(spacing: 0) {
             if viewModel.showSettings {
                 SettingsView(viewModel: viewModel)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             } else {
                 mainContent
+                    .transition(.move(edge: .leading).combined(with: .opacity))
             }
         }
         .frame(width: 340)
         .modifier(GlassBackgroundModifier())
+        .animation(.easeInOut(duration: 0.3), value: viewModel.showSettings)
     }
 
     private var mainContent: some View {
@@ -40,15 +49,24 @@ struct MainPopoverView: View {
 
             Divider()
 
-            if viewModel.username.isEmpty {
-                emptyStateView
-            } else if viewModel.isLoading && viewModel.contributions == nil {
-                loadingView
-            } else if let error = viewModel.error, viewModel.contributions == nil {
-                errorView(error)
-            } else {
-                contributionsContent
+            Group {
+                if viewModel.username.isEmpty {
+                    emptyStateView
+                        .transition(.opacity.combined(with: .scale))
+                } else if viewModel.isLoading && viewModel.contributions == nil {
+                    loadingView
+                        .transition(.opacity.combined(with: .scale))
+                } else if let error = viewModel.error, viewModel.contributions == nil {
+                    errorView(error)
+                        .transition(.opacity.combined(with: .scale))
+                } else {
+                    contributionsContent
+                        .transition(.opacity.combined(with: .scale))
+                }
             }
+            .animation(.easeInOut(duration: 0.4), value: viewModel.username.isEmpty)
+            .animation(.easeInOut(duration: 0.4), value: viewModel.isLoading)
+            .animation(.easeInOut(duration: 0.4), value: viewModel.error != nil)
         }
         .padding()
     }
@@ -64,6 +82,18 @@ struct MainPopoverView: View {
                         Label("\(viewModel.currentStreak) day streak", systemImage: "flame.fill")
                             .font(.caption)
                             .foregroundStyle(.orange)
+                            .opacity(viewModel.currentStreak > 0 ? 1.0 : 0.6)
+                            .scaleEffect(animateStreak ? 1.05 : 1.0)
+                            .animation(
+                                animateStreak ? .easeInOut(duration: 1.5).repeatForever(autoreverses: true) : .default,
+                                value: animateStreak
+                            )
+                            .onAppear {
+                                animateStreak = viewModel.currentStreak > 0
+                            }
+                            .task(id: viewModel.currentStreak) {
+                                animateStreak = viewModel.currentStreak > 0
+                            }
 
                         Label("Longest: \(viewModel.longestStreak)", systemImage: "trophy.fill")
                             .font(.caption)
@@ -82,14 +112,12 @@ struct MainPopoverView: View {
             Spacer()
 
             Menu {
-                Button(viewModel.isLoading ? "Refreshing..." : "Refresh") {
+                Button(action: {
                     if !viewModel.isLoading {
                         viewModel.refresh()
                     }
-                } icon: {
-                    Image(systemName: "arrow.clockwise")
-                        .rotationEffect(.degrees(viewModel.isLoading ? 360 : 0))
-                        .animation(viewModel.isLoading ? .linear(duration: 1.0).repeatForever(autoreverses: false) : .default, value: viewModel.isLoading)
+                }) {
+                    Label(viewModel.isLoading ? "Refreshing..." : "Refresh", systemImage: "arrow.clockwise")
                 }
                 .disabled(viewModel.isLoading)
 
@@ -115,8 +143,16 @@ struct MainPopoverView: View {
                     NSApplication.shared.terminate(nil)
                 }
             } label: {
-                Image(systemName: "ellipsis.circle")
+                Image(systemName: viewModel.isLoading ? "arrow.clockwise" : "ellipsis.circle")
                     .font(.title2)
+                    .foregroundStyle(viewModel.isLoading ? .secondary : .primary)
+                    .rotationEffect(.degrees(viewModel.isLoading ? 360 : 0))
+                    .animation(
+                        viewModel.isLoading 
+                        ? .linear(duration: 1.0).repeatForever(autoreverses: false)
+                        : .easeOut(duration: 0.3),
+                        value: viewModel.isLoading
+                    )
             }
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
@@ -138,12 +174,14 @@ struct MainPopoverView: View {
     }
 
     private var emptyStateView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             Spacer()
 
             Image(systemName: "person.crop.circle.badge.questionmark")
                 .font(.system(size: 48))
                 .foregroundStyle(.secondary)
+                .opacity(0.8)
+                .scaleEffect(1.0)
 
             Text("No GitHub username set")
                 .font(.headline)
@@ -153,9 +191,16 @@ struct MainPopoverView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
-            Button("Open Settings") {
-                viewModel.showSettings = true
+            Button {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    viewModel.showSettings = true
+                }
+            } label: {
+                Text("Open Settings")
+                    .fontWeight(.semibold)
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.regular)
 
             Spacer()
         }
@@ -173,7 +218,7 @@ struct MainPopoverView: View {
     }
 
     private func errorView(_ error: String) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             Spacer()
 
             Image(systemName: "exclamationmark.triangle.fill")
@@ -188,9 +233,16 @@ struct MainPopoverView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
-            Button("Retry", systemImage: "arrow.clockwise") {
-                viewModel.refresh()
+            Button {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    viewModel.refresh()
+                }
+            } label: {
+                Label("Retry", systemImage: "arrow.clockwise")
+                    .fontWeight(.semibold)
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.regular)
 
             Spacer()
         }

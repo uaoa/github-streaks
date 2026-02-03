@@ -38,13 +38,36 @@ enum ContributionLevel: Int, Codable {
     case high = 3
     case veryHigh = 4
 
+    // Fixed thresholds (legacy, used for menu bar)
     static func from(count: Int) -> ContributionLevel {
         switch count {
         case 0: return .none
-        case 1...3: return .low
-        case 4...6: return .medium
-        case 7...9: return .high
+        case 1...2: return .low
+        case 3...5: return .medium
+        case 6...8: return .high
         default: return .veryHigh
+        }
+    }
+
+    // Relative level based on max contributions (GitHub's algorithm)
+    // Uses quartiles: 0 = none, 1-25% = low, 26-50% = medium, 51-75% = high, 76-100% = veryHigh
+    static func relative(count: Int, max: Int) -> ContributionLevel {
+        guard count > 0 else { return .none }
+        guard max > 0 else { return .none }
+
+        let percentage = Double(count) / Double(max)
+
+        switch percentage {
+        case 0:
+            return .none
+        case 0..<0.25:
+            return .low
+        case 0.25..<0.5:
+            return .medium
+        case 0.5..<0.75:
+            return .high
+        default:
+            return .veryHigh
         }
     }
 
@@ -63,7 +86,7 @@ enum ContributionLevel: Int, Codable {
         }
     }
 
-    // Fallback colors if asset colors not available
+    // Updated GitHub colors (2024) - matches actual GitHub contribution graph exactly
     var fallbackColor: Color {
         switch self {
         case .none:

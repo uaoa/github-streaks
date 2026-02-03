@@ -8,6 +8,10 @@ struct ContributionsGridView: View {
     private let cellSpacing: CGFloat = 2
     private let dayLabels = ["", "Mon", "", "Wed", "", "Fri", ""]
 
+    private var maxContributions: Int {
+        weeks.flatMap { $0.days }.map { $0.count }.max() ?? 1
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .top, spacing: 2) {
@@ -32,8 +36,7 @@ struct ContributionsGridView: View {
             }
         }
         .padding(8)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .background(.background.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
         .contentShape(Rectangle())
         .onTapGesture {
             onTap?()
@@ -79,7 +82,7 @@ struct ContributionsGridView: View {
 
                     ForEach(paddedDays) { dayWrapper in
                         if let day = dayWrapper.day {
-                            ContributionDayCell(day: day, cellSize: cellSize)
+                            ContributionDayCell(day: day, cellSize: cellSize, maxContributions: maxContributions)
                         } else {
                             RoundedRectangle(cornerRadius: 2)
                                 .fill(Color.clear)
@@ -161,25 +164,37 @@ private struct DayWrapper: Identifiable {
 struct ContributionDayCell: View {
     let day: ContributionDay
     let cellSize: CGFloat
+    let maxContributions: Int
 
     @State private var isHovered = false
     @State private var showPopover = false
     @State private var hoverTask: Task<Void, Never>?
 
-    private let hoverDelay: UInt64 = 200_000_000 // 400ms in nanoseconds
+    private let hoverDelay: UInt64 = 200_000_000 // 200ms in nanoseconds
+
+    private var relativeLevel: ContributionLevel {
+        ContributionLevel.relative(count: day.count, max: maxContributions)
+    }
 
     var body: some View {
         RoundedRectangle(cornerRadius: 2)
-            .fill(day.level.fallbackColor)
+            .fill(relativeLevel.fallbackColor)
             .frame(width: cellSize, height: cellSize)
+            .scaleEffect(isHovered && day.count > 0 ? 1.1 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: isHovered)
             .popover(isPresented: $showPopover, arrowEdge: .top) {
                 tooltipContent
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, 12)
                     .padding(.vertical, 8)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(.white.opacity(0.2), lineWidth: 1)
+                    )
             }
             .onHover { hovering in
                 isHovered = hovering
-                if hovering {
+                if hovering && day.count > 0 {
                     hoverTask = Task {
                         try? await Task.sleep(nanoseconds: hoverDelay)
                         if !Task.isCancelled && isHovered {

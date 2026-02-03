@@ -114,8 +114,8 @@ struct SettingsView: View {
                         viewModel.menuBarDaysCount = days
                     }
                     .buttonStyle(.bordered)
-                    .controlSize(.small)
                     .tint(viewModel.menuBarDaysCount == days ? .accentColor : .secondary)
+                    .controlSize(.small)
                 }
             }
 
@@ -148,8 +148,8 @@ struct SettingsView: View {
                         viewModel.menuBarDaysModeCount = days
                     }
                     .buttonStyle(.bordered)
-                    .controlSize(.small)
                     .tint(viewModel.menuBarDaysModeCount == days ? .accentColor : .secondary)
+                    .controlSize(.small)
                 }
             }
 

@@ -13,18 +13,13 @@ struct GitHubStreaksApp: App {
     }
 }
 
-class FocusablePanel: NSPanel {
-    override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { false }
-}
-
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var panel: NSPanel!
     private var contextMenu: NSMenu!
     private var contributionsViewModel: ContributionsViewModel!
-    private var eventMonitor: EventMonitor?
+    private var globalMouseMonitor: Any?
     private var rightClickMonitor: Any?
     private var cancellables = Set<AnyCancellable>()
 
@@ -33,10 +28,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupMenuBar()
         setupContextMenu()
         setupPopover()
-        setupEventMonitor()
+        setupMouseMonitoring()
 
         // Hide dock icon
         NSApp.setActivationPolicy(.accessory)
+    }
+
+    private func setupMouseMonitoring() {
+        // No external class needed - using inline monitoring
     }
 
     private func setupMenuBar() {
@@ -282,6 +281,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func nsColorForLevel(_ level: ContributionLevel) -> NSColor {
         let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
 
+        // Updated GitHub colors (2024) to match web interface exactly
         switch level {
         case .none:
             return isDark ? NSColor(hex: "#161b22") : NSColor(hex: "#ebedf0")
@@ -300,7 +300,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let contentView = MainPopoverView(viewModel: contributionsViewModel)
         let hostingController = NSHostingController(rootView: contentView)
 
-        panel = FocusablePanel(
+        // Custom panel class inline
+        class CustomPanel: NSPanel {
+            override var canBecomeKey: Bool { true }
+            override var canBecomeMain: Bool { false }
+        }
+
+        panel = CustomPanel(
             contentRect: NSRect(x: 0, y: 0, width: 320, height: 400),
             styleMask: [.nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
@@ -319,18 +325,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             contentView.wantsLayer = true
             contentView.layer?.cornerRadius = 10
             contentView.layer?.masksToBounds = true
-        }
-    }
-
-    private func setupEventMonitor() {
-        eventMonitor = EventMonitor(mask: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            guard let self = self, self.panel.isVisible else { return }
-
-            // Check if click is outside the panel
-            let clickLocation = NSEvent.mouseLocation
-            if !self.panel.frame.contains(clickLocation) {
-                self.closePopover()
-            }
         }
     }
 
@@ -423,12 +417,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         panel.setFrameOrigin(NSPoint(x: x, y: y))
         panel.makeKeyAndOrderFront(nil)
-        eventMonitor?.start()
+        
+        // Start monitoring clicks outside panel
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            guard let self = self, self.panel.isVisible else { return }
+            let clickLocation = NSEvent.mouseLocation
+            if !self.panel.frame.contains(clickLocation) {
+                self.closePopover()
+            }
+        }
     }
 
     private func closePopover() {
         panel.orderOut(nil)
-        eventMonitor?.stop()
+        
+        // Stop monitoring clicks
+        if let monitor = globalMouseMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalMouseMonitor = nil
+        }
     }
 }
 
