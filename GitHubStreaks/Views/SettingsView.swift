@@ -2,35 +2,37 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var viewModel: ContributionsViewModel
-
     @State private var usernameInput: String = ""
 
     var body: some View {
         VStack(spacing: 0) {
             headerView
 
-            Divider()
-
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 usernameSection
                 menuBarSection
                 infoSection
             }
-            .padding(12)
+            .padding(16)
         }
+        .fixedSize(horizontal: false, vertical: true)
+        .glassBackground()
         .onAppear {
             usernameInput = viewModel.username
         }
     }
+
+    // MARK: - Header
 
     private var headerView: some View {
         HStack {
             Button {
                 viewModel.showSettings = false
             } label: {
-                Label("Back", systemImage: "chevron.left")
+                Image(systemName: "chevron.left")
+                    .font(.body.weight(.medium))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(GlassCircleButtonStyle())
 
             Spacer()
 
@@ -40,15 +42,21 @@ struct SettingsView: View {
             Spacer()
 
             Color.clear
-                .frame(width: 50)
+                .frame(width: 28, height: 28)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
     }
 
+    // MARK: - Username Section
+
     private var usernameSection: some View {
-        GroupBox("GitHub Username") {
-            HStack {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("GitHub Username", systemImage: "person.fill")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+
+            HStack(spacing: 8) {
                 TextField("Enter username", text: $usernameInput)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit {
@@ -64,26 +72,37 @@ struct SettingsView: View {
                 }
             }
         }
+        .padding(12)
+        .glassCard(cornerRadius: 12)
     }
 
+    // MARK: - Menu Bar Section
+
     private var menuBarSection: some View {
-        GroupBox("Menu Bar Display") {
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Menu Bar Display", systemImage: "menubar.rectangle")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+
+            VStack(alignment: .leading, spacing: 10) {
                 Toggle("Show Streak", isOn: $viewModel.menuBarShowStreak)
+                    .toggleStyle(.switch)
 
                 Divider()
 
-                Text("Display Mode")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Display Mode")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
 
-                Picker("Mode", selection: $viewModel.menuBarMode) {
-                    ForEach(MenuBarDisplayMode.allCases, id: \.self) { mode in
-                        Text(mode.rawValue).tag(mode)
+                    Picker("Mode", selection: $viewModel.menuBarMode) {
+                        ForEach(MenuBarDisplayMode.allCases, id: \.self) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
 
                 if viewModel.menuBarMode == .grid {
                     gridDaysSettings
@@ -94,18 +113,22 @@ struct SettingsView: View {
                 }
             }
         }
+        .padding(12)
+        .glassCard(cornerRadius: 12)
     }
 
     private var gridDaysSettings: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider()
+
             HStack {
                 Text("Grid Days")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text("\(viewModel.menuBarDaysCount)")
-                    .font(.caption)
-                    .monospacedDigit()
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
             }
 
             HStack(spacing: 6) {
@@ -131,15 +154,17 @@ struct SettingsView: View {
     }
 
     private var daysModeSettings: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider()
+
             HStack {
                 Text("Days to show")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text("\(viewModel.menuBarDaysModeCount)")
-                    .font(.caption)
-                    .monospacedDigit()
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
             }
 
             HStack(spacing: 6) {
@@ -164,9 +189,15 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Info Section
+
     private var infoSection: some View {
-        GroupBox("About") {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("About", systemImage: "info.circle.fill")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+
+            VStack(alignment: .leading, spacing: 6) {
                 Label("Data refreshes every 30 minutes", systemImage: "clock.arrow.circlepath")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -175,11 +206,53 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(12)
+        .glassCard(cornerRadius: 12)
     }
+
+    // MARK: - Actions
 
     private func saveUsername() {
         viewModel.username = usernameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+// MARK: - Glass Circle Button Style
+
+private struct GlassCircleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .frame(width: 28, height: 28)
+            .background {
+                Circle()
+                    .fill(.regularMaterial)
+            }
+            .opacity(configuration.isPressed ? 0.7 : 1.0)
+            .contentShape(Circle())
+    }
+}
+
+// MARK: - Glass Effect Modifiers
+
+private extension View {
+    @ViewBuilder
+    func glassBackground() -> some View {
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer {
+                self
+            }
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func glassCard(cornerRadius: CGFloat) -> some View {
+        if #available(macOS 26.0, *) {
+            self.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+        } else {
+            self.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
+        }
     }
 }

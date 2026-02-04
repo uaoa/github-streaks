@@ -90,6 +90,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.updateMenuBarDisplay()
             }
             .store(in: &cancellables)
+
+        // Observe theme changes
+        DistributedNotificationCenter.default()
+            .publisher(for: Notification.Name("AppleInterfaceThemeChangedNotification"))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateMenuBarDisplay()
+            }
+            .store(in: &cancellables)
     }
 
     private func updateMenuBarDisplay() {
@@ -138,15 +147,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private var isDarkMode: Bool {
+        NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    }
+
     private func createStreakImage() -> NSImage {
         let streak = contributionsViewModel.currentStreak
         let hasStreak = streak > 0
 
         let iconName = "flame.fill"
-        let iconColor = hasStreak ? NSColor.orange : NSColor.secondaryLabelColor
+        // Use explicit color based on current appearance
+        let textColor = isDarkMode ? NSColor.white : NSColor.black
+        let iconColor = hasStreak ? textColor : NSColor.secondaryLabelColor
 
         guard let symbolImage = NSImage(systemSymbolName: iconName, accessibilityDescription: "Streak")?
-            .withSymbolConfiguration(.init(pointSize: 12, weight: .medium)) else {
+            .withSymbolConfiguration(.init(pointSize: 12, weight: .medium, scale: .medium)
+                .applying(.init(paletteColors: [iconColor]))) else {
             return NSImage()
         }
 
@@ -154,7 +170,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
         let textAttributes: [NSAttributedString.Key: Any] = [
             .font: font,
-            .foregroundColor: NSColor.labelColor
+            .foregroundColor: textColor
         ]
         let textSize = text.size(withAttributes: textAttributes)
 
@@ -168,7 +184,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Draw tinted icon
         let iconRect = NSRect(x: 0, y: (height - iconSize.height) / 2, width: iconSize.width, height: iconSize.height)
-        iconColor.set()
         symbolImage.draw(in: iconRect, from: .zero, operation: .sourceOver, fraction: 1.0)
 
         // Draw text

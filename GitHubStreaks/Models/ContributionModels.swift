@@ -90,7 +90,7 @@ enum ContributionLevel: Int, Codable {
     var fallbackColor: Color {
         switch self {
         case .none:
-            return Color(light: Color(hex: "#ebedf0"), dark: Color(hex: "#161b22"))
+            return Color(light: Color(hex: "#ebedf0"), dark: Color(hex: "#151b23"))
         case .low:
             return Color(light: Color(hex: "#9be9a8"), dark: Color(hex: "#0e4429"))
         case .medium:

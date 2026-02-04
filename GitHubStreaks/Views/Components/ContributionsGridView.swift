@@ -36,7 +36,7 @@ struct ContributionsGridView: View {
             }
         }
         .padding(8)
-        .background(.background.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+        .background(Color(light: .white, dark: Color(hex: "#0D1116")), in: RoundedRectangle(cornerRadius: 10))
         .contentShape(Rectangle())
         .onTapGesture {
             onTap?()
@@ -176,9 +176,17 @@ struct ContributionDayCell: View {
         ContributionLevel.relative(count: day.count, max: maxContributions)
     }
 
+    private var borderColor: Color {
+        Color(light: Color(hex: "#1f2328").opacity(0.05), dark: Color(hex: "#1f2328").opacity(0.05))
+    }
+
     var body: some View {
         RoundedRectangle(cornerRadius: 2)
             .fill(relativeLevel.fallbackColor)
+            .overlay(
+                RoundedRectangle(cornerRadius: 2)
+                    .strokeBorder(borderColor, lineWidth: 0.5)
+            )
             .frame(width: cellSize, height: cellSize)
             .scaleEffect(isHovered && day.count > 0 ? 1.1 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: isHovered)
@@ -229,6 +237,7 @@ struct ContributionDayCell: View {
 
 struct ContributionLegendView: View {
     private let cellSize: CGFloat = 10
+    private let borderColor = Color(light: Color(hex: "#1f2328").opacity(0.05), dark: Color(hex: "#1f2328").opacity(0.05))
 
     var body: some View {
         HStack(spacing: 4) {
@@ -241,6 +250,10 @@ struct ContributionLegendView: View {
             ForEach(ContributionLevel.allCases, id: \.rawValue) { level in
                 RoundedRectangle(cornerRadius: 2)
                     .fill(level.fallbackColor)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 2)
+                            .strokeBorder(borderColor, lineWidth: 0.5)
+                    )
                     .frame(width: cellSize, height: cellSize)
             }
 

@@ -5,42 +5,24 @@ struct GlassBackgroundModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .background {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(colorScheme == .dark
-                        ? Color(nsColor: .windowBackgroundColor).opacity(0.95)
-                        : Color(nsColor: .windowBackgroundColor))
-                    .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 4)
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(
-                        colorScheme == .dark
-                            ? .white.opacity(0.1)
-                            : .black.opacity(0.05),
-                        lineWidth: 0.5
-                    )
-            )
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 4)
     }
 }
 
 struct MainPopoverView: View {
     @ObservedObject var viewModel: ContributionsViewModel
-    @State private var animateStreak = false
 
     var body: some View {
-        VStack(spacing: 0) {
+        Group {
             if viewModel.showSettings {
                 SettingsView(viewModel: viewModel)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
             } else {
                 mainContent
-                    .transition(.move(edge: .leading).combined(with: .opacity))
             }
         }
         .frame(width: 340)
         .modifier(GlassBackgroundModifier())
-        .animation(.easeInOut(duration: 0.3), value: viewModel.showSettings)
     }
 
     private var mainContent: some View {
@@ -79,25 +61,22 @@ struct MainPopoverView: View {
                         .font(.headline)
 
                     HStack(spacing: 12) {
-                        Label("\(viewModel.currentStreak) day streak", systemImage: "flame.fill")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                            .opacity(viewModel.currentStreak > 0 ? 1.0 : 0.6)
-                            .scaleEffect(animateStreak ? 1.05 : 1.0)
-                            .animation(
-                                animateStreak ? .easeInOut(duration: 1.5).repeatForever(autoreverses: true) : .default,
-                                value: animateStreak
-                            )
-                            .onAppear {
-                                animateStreak = viewModel.currentStreak > 0
-                            }
-                            .task(id: viewModel.currentStreak) {
-                                animateStreak = viewModel.currentStreak > 0
-                            }
+                        HStack(spacing: 4) {
+                            Image(systemName: "flame.fill")
+                                .foregroundStyle(.orange)
+                            Text("\(viewModel.currentStreak) day streak")
+                                .foregroundStyle(.primary)
+                        }
+                        .font(.caption)
+                        .opacity(viewModel.currentStreak > 0 ? 1.0 : 0.6)
 
-                        Label("Longest: \(viewModel.longestStreak)", systemImage: "trophy.fill")
-                            .font(.caption)
-                            .foregroundStyle(.yellow)
+                        HStack(spacing: 4) {
+                            Image(systemName: "trophy.fill")
+                                .foregroundStyle(.yellow)
+                            Text("Longest: \(viewModel.longestStreak)")
+                                .foregroundStyle(.primary)
+                        }
+                        .font(.caption)
                     }
                 } else {
                     Text("GitHub Streaks")
