@@ -25,6 +25,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch all tags
+        run: git fetch --tags --force
 
       - name: Get current version
         id: current_version
@@ -68,13 +73,18 @@ jobs:
           echo "New version will be: $NEW_VERSION"
 
       - name: Create and push tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           NEW_VERSION="${{ steps.new_version.outputs.NEW_VERSION }}"
 
+          echo "Creating tag: $NEW_VERSION"
           git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION"
+
+          echo "Pushing tag to origin..."
           git push origin "$NEW_VERSION"
 
           echo "✅ Created and pushed tag: $NEW_VERSION"
