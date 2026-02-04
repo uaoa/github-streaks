@@ -88,4 +88,11 @@ jobs:
           git push origin "$NEW_VERSION"
 
           echo "✅ Created and pushed tag: $NEW_VERSION"
-          echo "🚀 This will trigger the Build and Release workflow"
+
+      - name: Trigger Build and Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run release.yml \
+            --field version=${{ steps.new_version.outputs.NEW_VERSION }}
+          echo "🚀 Triggered Build and Release workflow"
